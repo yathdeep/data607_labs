@@ -1,0 +1,100 @@
+---
+title: "Week 1 Assignment"
+Article referred: chess-transfers from ***https://fivethirtyeight.com/features/american-chess-is-great-again/**
+Overview : The article seleced from above site describes the importance of chess transfer in relation to of America's dominance in the game.Many important facts can be derived from the data which also showed that more players transferred to US than to any other country.Lots of money was spent to Make American chess great.From the data it shows clearly that more and more players from trasnferred from Russia followd by countries which were earlier part of USSR.
+ 
+author: "Deepak sharma"
+date: "`r Sys.Date()`"
+output: html_document
+---
+  ****Load the required libraries ***
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(openintro)
+library(dplyr)
+```
+
+###  Activity 1
+***Load the data and get the summary of this data***
+       ****************************************************************
+        1) Read data from transfers.csv
+        2) Get row and columns of this data set--it has 932 rows and 5 columns(variables)
+        3) Get the summary of this data
+        4) print the data of this set
+
+```{r }
+chessdata <- read.table("https://raw.githubusercontent.com/fivethirtyeight/data/master/chess-transfers/transfers.csv",sep=",", header=T,  stringsAsFactors=FALSE,quote="", fill=FALSE)
+
+dim(chessdata)
+
+summary(chessdata)
+
+head(chessdata)
+
+```
+
+
+### Activity 2
+
+**********************************************************************
+ Shows number of transfers to USA .Total 89 transferred to US.IN USA federation apply column wise subset to select
+ only url,id,From.fed and transfer date as we have already filtered based on US federation .
+ Replaced the short name of USA with "America" for USA subset data set
+ ***********************************************************************
+
+```{r  }
+USFederation<-subset(chessdata, Federation == "USA",select= c(url,ID,Federation ,Transfer.Date) ) 
+USFederationtotal=table(USFederation$Federation)
+summary(USFederation)
+USFederation$Federation[USFederation$Federation %in% c("USA")] <-"AMERICA"
+USFederation$Federation
+
+```
+
+
+### Activity 3
+
+
+ *********************************************************************
+  Find how many transfers took place from other countries and note the most transfers that took place from a 
+  certain country
+  *********************************************************************
+  
+
+```{r }
+CountryWise_TotalTransfer=table(chessdata$Form.Fed)
+CountryWise_TotalTransfer
+
+
+CountryWiseTransferRation<-CountryWise_TotalTransfer/sum(CountryWise_TotalTransfer)
+
+barplot(CountryWiseTransferRation)
+```
+ 
+
+### Conclusion drawn
+
+*************************************************************************************
+   ***CONCLUSION CAN BE CLEARLY DRAWN THAT MOST TRANSFERS HAPPENED in 2003 FROM RUSSIA**
+  **************************************************************************************
+
+```{r dim-present}
+maxTransferCountries <- subset(chessdata, (as.Date(chessdata$Transfer.Date,format = "%m/%d/%y") >=1/23/01 & as.Date(chessdata$Transfer.Date,format = "%m/%d/%y" )<= 3/15/10) & chessdata$Form.Fed=="RUS")
+
+
+chessdata$Transfer.Date<-as.Date(chessdata$Transfer.Date,format="%y")
+
+chessdata$year <- as.numeric(format(chessdata$Transfer.Date, "%Y"))
+
+maxTransferCountries <- subset(chessdata, chessdata$year >=2001 & chessdata$year <= 2010 & chessdata$Form.Fed=="RUS")
+
+
+federations<-table(maxTransferCountries$year)
+
+federationsRatios<-federations/sum(federations)
+
+
+barplot(federationsRatios,main="Transfers from Russia  between 2001 and 2010")
+```
+ 
