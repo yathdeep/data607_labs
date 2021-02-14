@@ -1,0 +1,152 @@
+---
+title: "DeepaK - Week 2 - 607 Assigment"
+author: "Deepak sharma"
+date: "`r Sys.Date()`"
+output: 
+html_document:
+    includes:
+      in_header: header.html
+    css: ./lab.css
+    highlight: pygments
+    theme: cerulean
+    toc: true
+    toc_float: true
+   
+---
+
+```{r load-packages, message=FALSE}
+library(tidyverse)
+library(openintro)
+library(shiny)
+library(RMySQL)
+library(dplyr)
+library(tidyr)
+
+ 
+```
+
+
+```{r}
+
+options(mysql = list(
+  "host" = "127.0.0.1",
+  "port" = 3306,
+  "user" = "root",
+  "password" = "admin"
+))
+
+databaseName <- "moviesurvey"
+table <- "ratings"
+
+saveData <- function(data) {
+  # Connect to the database
+  db <- dbConnect(MySQL(), dbname = databaseName, host = options()$mysql$host, 
+                  port = options()$mysql$port, user = options()$mysql$user, 
+                  password = options()$mysql$password)
+  # Construct the update query by looping over the data fields
+  query <- sprintf(
+    "INSERT INTO %s (%s) VALUES ('%s')",
+    table, 
+    paste(names(data), collapse = ", "),
+    paste(data, collapse = "', '")
+  )
+  # Submit the update query and disconnect
+  dbGetQuery(db, query)
+  dbDisconnect(db)
+}
+
+loadData <- function() {
+  # Connect to the database
+  db <- dbConnect(MySQL(), dbname = databaseName, host = options()$mysql$host, 
+                  port = options()$mysql$port, user = options()$mysql$user, 
+                  password = options()$mysql$password)
+  # Construct the fetching query
+  query <- sprintf("SELECT * FROM %s", table)
+  # Submit the fetch query and disconnect
+  data <- dbGetQuery(db, query)
+  dbDisconnect(db)
+  data
+}
+
+# Define the fields we want to save from the form
+fields <- c("name", "sherlock", "harrypotter", "knivesout", "avataar")
+
+# Shiny app with 3 fields that the user can submit data for
+shinyApp(
+  ui = fluidPage(
+    titlePanel("Survey: Top four Movies of All Time"),
+    h4("Rate each movie from 0 to 5 (zero=did not see - 5=highest rating)"),
+    h6(""),
+    DT::dataTableOutput("responses", width = 300), tags$hr(),
+    textInput("name", "Enter your Name to begin Survey:", ""),
+    sliderInput("sherlock", "Sherlock Homes 2009 R",
+                0, 5, 0, ticks = TRUE),
+    sliderInput("harrypotter", "Sorcerer's stone (2001) R",
+                0, 5, 0, ticks = TRUE),
+    sliderInput("knivesout", "knives Out (2019) R",
+                0, 5, 0, ticks = TRUE),
+    sliderInput("avataar", "Creating the world of Pandora (2009) R  ",
+                0, 5, 0, ticks = TRUE),
+    actionButton("submit", "Submit")
+  ),
+  server = function(input, output, session) {
+    
+    # Whenever a field is filled, aggregate all form data
+    formData <- reactive({
+      data <- sapply(fields, function(x) input[[x]])
+      data
+    })
+    
+    # When the Submit button is clicked, save the form data
+    observeEvent(input$submit, {
+      saveData(formData())
+    })
+    
+    # Show the previous responses
+    # (update with current response when Submit is clicked)
+    output$responses <- DT::renderDataTable({
+      input$submit
+      loadData()
+    })     
+  }
+)  
+
+```
+the data needs to be cleaned up and brought into the tidy format for
+analysis
+```{r}
+
+
+db <- dbConnect(MySQL(), dbname = databaseName, host = options()$mysql$host, 
+                  port = options()$mysql$port, user = options()$mysql$user, 
+                  password = options()$mysql$password)
+
+ratings=dbSendQuery(db,"select * from ratings")
+data=fetch(ratings)
+dbDisconnect(db)
+#load data as tibble
+my_data=as_data_frame(data)
+my_data
+
+movies <- data %>% gather('sherlock', 'harrypotter', 'knivesout', 'avataar', key="movie", value="rating")
+glimpse(movies)
+```
+draw a conclusion--don't count for those who did not rate
+tidy up the data
+
+```{r}
+movies=mutate(movies,rating=as.integer(rating)) %>% filter(complete.cases(rating))
+#let us see how many rating we have collected per movie  
+table(movies$movie)
+```
+plot the data- and see the rating of the movie
+```{r}
+library(ggplot2)
+ggplot(movies, aes(name, rating)) +   
+  geom_bar(aes(fill = movie), position = "dodge", stat="identity") +
+  coord_flip()
+
+qplot(data=movies,x=movie,y=rating,geom="boxplot",fill=movie)+coord_flip()+ggtitle("Moving Ratings")
+
+```
+
