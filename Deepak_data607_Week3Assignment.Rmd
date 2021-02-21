@@ -1,0 +1,121 @@
+---
+title: "Assignment 3"
+author: "Deepak Sharma"
+date: "`r Sys.Date()`"
+# output:
+#  prettydoc::html_pretty:
+#    theme: architect
+#    highlight: github
+    
+ 
+output: 
+  html_document:
+    toc: true # table of content true
+    toc_depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: true  ## if you want number sections at each table header
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+---
+# Load Required Packages
+```{r}
+library(tidyverse) 
+library(readxl)
+library(plyr)
+library(DBI)
+library(dbplyr)
+library(kableExtra)
+library(knitr)
+library(stringr)
+```
+
+# Read csv data and Loading the dataframe
+
+```{r}
+loadAllMajors <- read.csv("https://raw.githubusercontent.com/fivethirtyeight/data/master/college-majors/majors-list.csv",header=TRUE,stringsAsFactors=FALSE)
+loadAllMajors
+loadAllMajors_astibble=as_tibble(loadAllMajors)
+loadAllMajors_astibble
+
+```
+# Data manipulation and Transformation
+ 
+```{r}
+ # Display the Major Categories Count
+
+table(loadAllMajors$Major_Category)
+
+#removing '&'s  and replacing with 'AND'
+
+loadAllMajors <- as.data.frame(sapply(loadAllMajors, gsub, pattern = "[&]", replacement = "And"))
+
+ 
+# tidy up the data and highlight Arts Majors only
+loadAllMajors %>% 
+  kable(booktabs = T) %>%
+  kable_styling() %>%
+  row_spec(which(loadAllMajors$Major_Category == "Arts"), bold = T, color = "white", background = "red")
+
+ #find the subject from the whole list which has DATa Word in it and create a subset of it
+ filteredString = grep(pattern = 'DATA', loadAllMajors$Major, value = TRUE, ignore.case = TRUE)   
+ 
+ computerScienseMajors<-subset(loadAllMajors, loadAllMajors$Major==filteredString)
+ 
+ computerScienseMajors
+ 
+  
+ 
+ #find the subject from the whole list which has ARTS word in it Since statistics category is not there  and create a subset of it
+ artsfilteredString = grep(pattern = 'Arts', loadAllMajors$Major, value = TRUE, ignore.case = TRUE)  
+ artsfilteredString
+ 
+ #get the row number where the above selected records are in the dataset
+ artsMajor <- which(loadAllMajors$Major %in% artsfilteredString)
+ 
+```
+```{r}
+# DATA TRANSFORMATION - VEGGIES LIST
+
+vegies = list ('[1] "bell pepper"  "bilberry"     "blackberry"   "blood orange"
+
+[5] "blueberry"    "cantaloupe"   "chili pepper" "cloudberry"  
+
+[9] "elderberry"   "lime"         "lychee"       "mulberry"    
+
+[13] "olive"        "salal berry"')
+
+vegies
+```
+```{r}
+# now, we need to remove backslash and display the list
+pattern <-"[A-Za-z]+.?[A-Za-z]+"
+vegies <- str_extract_all(vegies, pattern)
+vegies
+ 
+# now the backlash are gone, let make one vector by join string
+vegies1 <- str_c(vegies, sep = "")
+vegies1
+
+writeLines(vegies1)
+
+
+```
+```{r}
+#3 Describe, in words, what these expressions will match:
+
+
+# (.)\1\1   == same character 3 times
+# (.)(.)\\2\\1 == A pair of characters followed by the same pair of characters in reversed order.
+#(..)\1                 ==   Any two characters repeated. 
+#"(.).\\1.\\1"          ==   A character followed by any character, the original character, any other character, the original character again
+#"(.)(.)(.).*\\3\\2\\1" ==   Three characters followed by zero or more characters of any kind followed by the same three characters but in reverse order
+
+
+#4 Construct regular expressions to match words that:
+
+#Start and end with the same character -- 
+str_subset(words, "^(.)((.*\\1$)|\\1?$)")
+
+#Contain a repeated pair of letters (e.g. "church" contains "ch" repeated twice.)
+str_subset(words,"([A-Za-z][A-Za-z]).*\\1")
+
+```
