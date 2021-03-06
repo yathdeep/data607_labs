@@ -1,0 +1,167 @@
+---
+title: "Deepak - PROJECT 1 607 Assigment"
+author: "Deepak sharma"
+date: "`r Sys.Date()`"
+output:
+   html_document:
+    toc: true # table of content true
+    toc_float: true
+    theme: united  # many options for theme, this one is my favorite.
+    highlight: tango  # specifies the syntax highlighting style
+editor_options: 
+  chunk_output_type: console
+---
+## Flight Analysis {.tabset}
+
+### Loading package
+```{r}
+library(tidyverse)
+library(stringr) 
+library(tidyr)
+library(dplyr)
+library(kableExtra)
+
+
+```
+### Create a .csv file 
+ 
+```{r}
+ ## Used Rbind to generate the reproducible data
+flights <- rbind(c(NA, NA, "Los Angeles", "Phoenix", "San Diego", "San Francisco", "Seattle"),
+             c("ALASKA", "on time", 497, 221, 212, 503, 1841),
+             c(NA, "delayed", 62, 12, 20, 102, 305),
+             c(NA, NA, NA, NA, NA, NA, NA),
+             c("AM WEST", "on time", 694, 4840, 383, 320, 201),
+             c(NA, "delayed", 117, 415, 65, 129, 61))
+
+write.table(flights, file = "C:\\cuny education material\\Data607_projects_git\\flight.csv", sep = ",", col.names=F, row.names=F)
+  
+
+```
+### Read .CSV file
+```{r}
+#display data in tabular format using kable
+
+flights <-read.csv(paste("https://raw.githubusercontent.com/yathdeep/data607_labs/main/flight.csv"))
+
+
+#fill the airline value in the NA place in 1 column,2nd and 4 row
+#and also remove space between on time value
+
+flights[2,1]<-flights[1,1]
+flights[5,1]<-flights[4,1]
+
+flights[,2] <- sapply(flights[,2], str_replace, " ", "_")
+
+kable(flights) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>% 
+  scroll_box(width = "100%", height = "700px") 
+ 
+
+```
+### Tidying Data
+```{r}
+
+##rename NA. column with Airlines and NA.1 column with Status
+
+#gather() will be used to transform dataset from its untidy form
+#to a normalized tidy long form to fulfill the rule to convert variables into
+#observation. Here, variables for destinations like Los.Angeles, San.Francisco
+#etc. Seattle became observations.
+
+
+tidy_airlines_data<-flights%>%na.omit()%>%rename("Airlines"="NA.","Status"="NA..1")%>%gather("Destination","Number of Flights",3:7)
+ 
+tidy_airlines_data<-tidy_airlines_data%>%arrange(Airlines,desc(`Number of Flights`))
+
+max_numberofflightsindicator<-which.max(tidy_airlines_data$`Number of Flights`)
+
+
+kable(tidy_airlines_data) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+   row_spec(max_numberofflightsindicator, background = "pink") %>% 
+  scroll_box(width = "100%", height = "700px")
+
+
+```
+### Wide Data format
+```{r}
+#spread is being used to transform data to wide form for better analysis.
+
+wide_tidy_flights<- tidy_airlines_data %>%
+  spread(key = Status, value = `Number of Flights`)
+
+kable(wide_tidy_flights) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  scroll_box(width = "100%", height = "700px")
+```
+### Data Analyis Cont'd Using Dplyr
+
+```{r}
+
+flights_with_otherstats <-wide_tidy_flights%>%
+  mutate(total_flights=delayed + on_time,
+         on_time_percent = round(on_time/total_flights*100, 2),
+         delayed_percent = round(delayed/total_flights*100, 2))
+
+kable(flights_with_otherstats) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  scroll_box(width = "100%", height = "700px")
+
+#arrange the flights to show most delays -in the order of airlines 
+
+flight_delays<-flights_with_otherstats%>%arrange(Airlines,desc(delayed_percent))
+
+kable(flight_delays) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  scroll_box(width = "100%", height = "700px")
+
+ontimeflights<-flights_with_otherstats%>%arrange(desc(on_time_percent))
+
+kable(ontimeflights) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed")) %>%
+  scroll_box(width = "100%", height = "700px")
+
+#Alaskan airline has better ontime record compared to its competitor
+
+
+```
+### Data Visulization
+
+```{r}
+
+
+ggplot(flights_with_otherstats, aes(x=Destination, y=delayed_percent, fill=Airlines))+
+  geom_bar(stat="identity", position=position_dodge()) +
+  theme_classic()+
+  geom_text(aes(label=delayed_percent),  hjust=1,position= position_dodge(width=0.9),  color="black") +
+        ggtitle("Flights Delayed by Airline by City %") +
+    xlab("Destination") + ylab("Flights Delayed %") +
+        coord_flip() 
+
+```
+```{r}
+## More comparison
+
+airlines_compared<-flights_with_otherstats%>%group_by(Airlines)%>%
+            summarise(flight_on_time = sum(on_time), flights_delayed = sum(delayed), 
+            percent_on_time = round(flight_on_time/sum(flight_on_time,flights_delayed )*100,2),
+            percent_delay = round(flights_delayed/sum(flight_on_time,flights_delayed)*100,2))%>%
+            select(Airlines,percent_on_time,percent_delay)
+
+airlines_compared %>% arrange(desc(percent_on_time))
+
+#view the above comparison on the chart
+ggplot(airlines_compared, aes(x=Airlines, y=percent_delay , fill=Airlines))+
+  geom_bar(stat="identity", position=position_dodge(),width = 0.3) +
+  theme_classic()+
+  ggtitle("Overall % Of Delayed Flights by Airlines") +
+  xlab("AirLines") + ylab("Delayed %") 
+  
+#From above we can see that that AM WEST Airlines performed better than ALASKAN
+#but on the other hand we noticed earlier than top 4 best performances were from
+#ALASKAN airlines so there is some anomaly in this finding which needs to be 
+#investigated further.        
+
+```
+
