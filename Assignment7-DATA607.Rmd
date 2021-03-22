@@ -1,0 +1,71 @@
+---
+title: "Assignment7-DATA607"
+author: "deepak sharma"
+date: "3/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+# Created three files which store the books’ information in HTML(using an html table), XML, and JSON formats.(Uploaded on Github). For XML file had to work with local as pulling from git is giving issues.
+
+```{r }
+library(XML)
+library(RJSONIO)
+library(rvest)
+library(RCurl)
+ 
+library(jsonlite)
+library(xml2)
+library(plyr)
+
+```
+
+# Conclusion : While the HTML, JSON and XML files have different structures, after manipulation process, the three data frames created are very similar especially for the ones from HTML and XML. xml data is little difficult to manipulate as it has been demostrated.For all other cases except html and json I loaded 2 authors under same but for xml created multilist for authors. 
+```{r}
+# 1. HTML - read and loaded data to data frame
+
+htmlURL <- "https://raw.githubusercontent.com/yathdeep/data607_labs/main/books.html"
+
+readHtml <- read_html(htmlURL)
+tables <- html_nodes(readHtml,"table")
+tables_ls <- html_table(tables, fill = TRUE)
+booksHTML.df <- as.data.frame(tables_ls)
+
+booksHTML.df
+
+ 
+#2. XML - loaded xml on local machine - as loading from git was giving issues.
+
+# Convert the input xml file to a data frame.
+#first way of showing data
+xmldataframe <- xmlToDataFrame("books.xml")
+xmldataframe
+
+#Second way of showing data
+ldply(xmlToList("books.xml"), data.frame)
+
+ 
+
+
+# 3. JSON - read and loaded data to data frame
+jsonURL <- "https://raw.githubusercontent.com/yathdeep/data607_labs/main/books.json"
+
+#Convert data in JSON into a data frame
+book.json.dataframe <- flatten(as.data.frame(fromJSON(jsonURL)))
+
+book.json.dataframe
+ 
+ 
+```
+
