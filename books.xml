@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<books>
+	<book>
+		<title>Python for Data Analysis</title>
+		<isbn>978-1-449-31979-3</isbn>
+		<authors>Julie Steele;Meghan Blanchette</authors>
+		<price>39.99</price>
+	</book>
+
+	<book>
+		<title>Hands-On Machine Learning with Scikit-Learn and TensorFlow</title>
+		<isbn>978-1-491-96229-9</isbn>
+		<authors>Nicole Tache</authors>
+		<price>49.99</price>
+	</book>
+
+	<book>
+		<title>R for Data Science</title>
+		<isbn>978-1-491-91039-9</isbn>
+		<authors>Marie Beaugureau;Mike Loukides</authors>
+		<price>39.99</price>
+	</book>
+</books>
