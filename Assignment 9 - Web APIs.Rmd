@@ -1,0 +1,54 @@
+---
+title: "Assignment 9 - Web APIs"
+author: "deepak sharma"
+date: "4/7/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(httr)
+library(dplyr)
+library(stringi)
+library(stringr)
+library(jsonlite)
+
+```
+
+##  Assignment – Web APIs
+
+The New York Times web site provides a rich set of APIs, as described here: http://developer.nytimes.com/docs
+
+chose one of the New York Times APIs, constructed an interface in R to read in the JSON data, and transform it to an R dataframe.
+
+```{r web Apis}
+key<-"rtBzASO4UaGeYcOP5i1wjPGxAzIzH06M"
+
+
+# just to test if we are getting the  response back from the api
+response1<-GET("https://api.nytimes.com/svc/archive/v1/2021/2.json", query = list(api_key = key, order = "by-title", offset = 20))
+response1[2]
+
+
+getArchive<-function(year, month, rows) {
+  stopifnot(!any(is.na(c(year, month))))
+  stopifnot(year >= 2000)
+  stopifnot(month >= 1 & month <= 12)
+  stopifnot(rows >= 1)
+
+  url<-sprintf("https://api.nytimes.com/svc/archive/v1/%d/%d.json?api-key=%s", year, month, key)
+  
+  response_df<-fromJSON(url,flatten = TRUE)$response$docs
+  
+  resp = response_df %>%
+    select(headline.main) %>%
+    mutate(Headline = stri_trans_totitle(headline.main))
+  
+  head(resp, rows)
+}
+
+getArchive(2018, 3, 10)
+```
+
