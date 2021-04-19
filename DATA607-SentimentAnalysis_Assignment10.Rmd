@@ -1,0 +1,295 @@
+---
+title: "Week 10 Assignment DATA607 - Sentiment Analysis"
+author: "Deepak"
+date: "4/18/2021"
+output:
+  html_document:
+    theme: default
+    highlight: espresso
+    toc: yes
+    toc_depth: 5
+    toc_float:
+      collapsed: yes
+  pdf_document:
+    toc: yes
+    toc_depth: '5'
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Sentiment Analysis
+
+"Sentiment Analysis is the process of computationally identifying and categorizing opinions in a piece of text, especially in order to determine whether the writer's attitude towards a particular topic, product, etc. is positive, negative, or neutral." - Oxford Dictionary
+
+We have 2 tasks in hand here: First, to take a deep dive into the mechanics and application of Sentiment Analysis by following an example provided by Juilia Silge and David Robinson from their book *"Text Mining with R - A Tidy Approach"*. 
+
+Second, to choose another corpus and incorporate another lexicon, not used in the example below, to perform sentiment analysis. 
+
+## Part I - The Example
+
+The following code is from Chapter 2  of *"Text Mining with R - A Tidy Approach"*, entitled "Sentiment Analysis with Tidy Data". A full citation of the code can be found at the end of the code excerpt. 
+
+2.1 - The Sentiments Dataset
+
+```{r message=FALSE, warning=FALSE}
+library(janeaustenr)
+library(tidyverse)
+library(stringr)
+library(tidytext)
+
+```
+
+```{r}
+library(tidytext)
+get_sentiments("afinn")
+```
+
+```{r}
+get_sentiments("bing")
+```
+
+```{r}
+get_sentiments("nrc")
+```
+
+2.2 Sentiment Analaysis with Inner Join
+
+```{r}
+tidy_books <- austen_books() %>%
+  group_by(book) %>%
+  mutate(linenumber = row_number(),
+         chapter = cumsum(str_detect(text, regex("^chapter [\\divxlc]", 
+                                                 ignore_case = TRUE)))) %>%
+  ungroup() %>%
+  unnest_tokens(word, text)
+
+tidy_books
+```
+
+```{r}
+nrc_joy <- get_sentiments("nrc") %>% 
+  filter(sentiment == "joy")
+
+tidy_books %>%
+  filter(book == "Emma") %>%
+  inner_join(nrc_joy) %>%
+  count(word, sort = TRUE)
+
+```
+
+```{r}
+library(tidyr)
+jane_austen_sentiment <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(book, index = linenumber %/% 80, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+jane_austen_sentiment
+
+```
+
+```{r fig.width=10}
+library(ggplot2)
+ggplot(jane_austen_sentiment, aes(index, sentiment, fill = book)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~book, ncol = 2, scales = "free_x")
+```
+
+2.3 Comparing the three sentiment dictionaries
+
+```{r}
+
+pride_prejudice <- tidy_books %>% 
+  filter(book == "Pride & Prejudice")
+
+pride_prejudice
+
+```
+
+
+```{r}
+afinn <- pride_prejudice %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bing_and_nrc <- bind_rows(pride_prejudice %>% 
+                            inner_join(get_sentiments("bing")) %>%
+                            mutate(method = "Bing et al."),
+                          pride_prejudice %>% 
+                            inner_join(get_sentiments("nrc") %>% 
+                                         filter(sentiment %in% c("positive", 
+                                                                 "negative"))) %>%
+                            mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+```
+
+```{r fig.width= 10}
+bind_rows(afinn, 
+          bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+```
+
+```{r}
+get_sentiments("nrc") %>% 
+     filter(sentiment %in% c("positive", 
+                             "negative")) %>% 
+  count(sentiment)
+
+get_sentiments("bing") %>% 
+  count(sentiment)
+```
+
+2.4 Most Common Positive and Negative Words
+
+```{r}
+bing_word_counts <- tidy_books %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+bing_word_counts
+```
+
+```{r}
+bing_word_counts %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(word, n, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(y = "Contribution to sentiment",
+       x = NULL) +
+  coord_flip()
+
+```
+
+2.5 Wordclouds
+
+```{r}
+library(wordcloud)
+tidy_books %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 100))
+```
+
+________________________________________________________________________________________
+
+The code above was sourced from:
+
+* Title:  *"Text Mining with R - A Tidy Approach"* 
+* Chapter: Chapter 2: Sentiment Analysis with Tidy Data
+* Authors: Juilia Silge and David Robinson
+* Availability: [https://www.tidytextmining.com/sentiment.html](https://www.tidytextmining.com/sentiment.html) 
+
+________________________________________________________________________________________
+
+
+### Part 2 - with another corpus and lexicon
+
+For part II of this project, chose to analyze text harry potter books using loughran lexicon
+
+```{r message=FALSE}
+#devtools::install_github("bradleyboehmke/harrypotter") 
+library(harrypotter)
+
+get_sentiments("loughran")
+
+```
+
+## Corpus
+```{r}
+
+prisoner_of_azkaban[1:1]
+
+```
+
+## Tokenize
+```{r}
+
+titles <- c("Prisoner_of_azkaban")
+books <- list(prisoner_of_azkaban)
+series <- tibble()
+
+for(i in seq_along(titles)) {
+  
+  temp <- tibble(chapter = seq_along(books[[i]]),
+                  text = books[[i]]) %>%
+    unnest_tokens(word, text) %>%
+    ##Here we tokenize each chapter into words
+    mutate(book = titles[i]) %>%
+    select(book, everything())
+  
+  series <- rbind(series, temp)
+}
+# set factor to keep books in order of publication
+series$book <- factor(series$book, levels = rev(titles))
+
+# This is what the tokenizing looks like
+series
+
+```
+## Analysis
+first let have  sentiment analysis on the book using the AFINN lexicon and then using Loughran
+```{r}
+# Using the AFINN lexicon for sentiment analysis on Harry Potter
+
+afinn_harrypotter <- series %>% 
+  mutate(word_count = 1:n(),
+               index = word_count %/% 500 + 1) %>%
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(book,index) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+
+# Using the Loughran lexicon for sentiment analysis on Harry Potter
+loughran <- series %>%
+  right_join(get_sentiments("loughran")) %>%
+  filter(!is.na(sentiment)) %>%
+  count(sentiment, sort = TRUE)
+
+
+
+#Prepares loughran for plotting
+loughran <- bind_rows(series %>%
+                  group_by(book) %>% 
+                  mutate(word_count = 1:n(),
+                         index = word_count %/% 500 + 1) %>%
+                  inner_join(get_sentiments("loughran") %>%
+                                     filter(sentiment %in% c("positive", "negative"))) %>%
+                  mutate(method = "Loughran")) %>%
+        count(book, method, index = index , sentiment) %>%
+        ungroup() %>%
+        spread(sentiment, n, fill = 0) %>%
+        mutate(sentiment = positive - negative) %>%
+        select(book, index, method, sentiment)
+
+
+#comparison 2 analyses.
+
+bind_rows(afinn_harrypotter, 
+          loughran) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+```
+
+## Conclusion
+
+Both lexicons look like produce similar trends
