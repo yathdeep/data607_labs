@@ -1,0 +1,41 @@
+---
+title: "Recommender systems"
+author: "Deepak sharma"
+date: "4/21/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Recommender Systems - An Analysis of Robinhood- a financial service company- https://www.robinhood.com/
+
+For this assignment I looked at https://www.robinhood.com/, new distruptive financial service companyen.They are using recommender features like discovery, Collections and a revamped Search feature .  
+
+### Scenario analysis:
+
+•	The target audience: buyers of stocks and Robinhood company itself.
+•	Users goals: to provide customers interested in investing good user experience and Robinhood addresses the perennial question of “how to sell more?” and thus increase AOV (Average Order Value).
+•	Methods for meeting goals: Robinhood is working on many things like discovery, Collections and a revamped Search feature based on user interaction.
+
+### Stock investment recommendation system - Robinhood
+
+Based on the recommender system for Robinhood :
+
+__1.	The app  recommends/suggests the stocks based on what other people are buying based on the market conditions.__
+
+Based on the volume of the stocks it suggest the buying/selling of the investment instruments.
+
+__2.	Collection/colloborative based search.__
+
+Based on the stocks popularity in social media and other platforms it is able to bring all those together and is presenting is as a collection.This helped many young investors when last time frenzy for Gamestop stock happened.
+
+__3.	The recommendation algorithm tends to offer good inside of the details of the investment ideas.__
+ 
+
+ 
+### Recommendations to improve the site/app
+Unlike products/services that do the well-defined jobs irrespective of the owner, the role of a stock is dependent on the financial goal of the owner  and that goal varies from person to person. And, therefore, recommending stocks by showing evidence through “Customers Also Bought” is an inherently flawed idea.
+An ideal replacement of this flawed idea would be a feature that recommends stocks based on the risk profile, investment goal, current portfolio, desired portfolio allocation, etc. Something of the sort where Robinhood will look at my portfolio allocation to understand the kind of investor I’m and then recommends stocks.
+
+ 
